@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ACELERA TIME — Produção</title>
+<style>
+:root{
+  --pri:#1A3A5C;--sec:#2E75B6;--acc:#E8671A;
+  --grn:#1E7A1E;--red:#C00000;--ylw:#D4860A;
+  --bg:#F0F4F8;--card:#FFF;--bdr:#DDE3EC;
+  --txt:#1E293B;--mut:#64748B;
+  --r:10px;--r-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:15px;line-height:1.5}
+button{cursor:pointer;font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:14px}
+
+/* TOPBAR */
+.topbar{background:var(--pri);color:#fff;height:58px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.topbar-logo{font-size:18px;font-weight:800;letter-spacing:.5px}
+.topbar-logo em{color:var(--acc);font-style:normal}
+.topbar-right{display:flex;align-items:center;gap:10px;font-size:13px;opacity:.85}
+
+/* LAYOUT */
+.main{max-width:960px;margin:0 auto;padding:20px 16px 40px}
+
+/* CARDS */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+@media(max-width:700px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);
+  border-top:5px solid;text-align:center}
+.stat-num{font-size:32px;font-weight:900;line-height:1}
+.stat-lbl{font-size:11px;color:var(--mut);margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.sc-blue{border-top-color:var(--sec)}.sc-blue .stat-num{color:var(--sec)}
+.sc-ylw{border-top-color:var(--ylw)}.sc-ylw .stat-num{color:var(--ylw)}
+.sc-grn{border-top-color:var(--grn)}.sc-grn .stat-num{color:var(--grn)}
+.sc-pur{border-top-color:#6B21A8}.sc-pur .stat-num{color:#6B21A8}
+
+/* SECTION HEADER */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.sec-title{font-size:16px;font-weight:800;color:var(--pri)}
+
+/* PEDIDO CARD */
+.ped-card{background:var(--card);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.09);
+  margin-bottom:14px;overflow:hidden;border-left:6px solid var(--bdr)}
+.ped-card.urgente{border-left-color:var(--red)}
+.ped-card.normal{border-left-color:var(--sec)}
+.ped-card.baixa{border-left-color:#94A3B8}
+.ped-card.pronto{border-left-color:var(--grn)}
+.ped-head{padding:14px 18px 10px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ped-num{font-size:20px;font-weight:900;color:var(--pri)}
+.ped-badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ped-body{padding:0 18px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:500px){.ped-body{grid-template-columns:1fr}}
+.ped-field{font-size:13px}
+.ped-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--mut)}
+.ped-val{font-size:14px;font-weight:600;margin-top:1px}
+.ped-actions{padding:12px 18px;background:#F8FAFC;border-top:1px solid var(--bdr);
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:4px 12px;
+  border-radius:20px;font-weight:700;white-space:nowrap}
+.btn{border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:700;
+  display:inline-flex;align-items:center;gap:7px;transition:all .12s;cursor:pointer}
+.btn-lg{padding:13px 22px;font-size:15px;font-weight:800}
+.btn-grn{background:var(--grn);color:#fff}
+.btn-grn:hover{background:#155a15}
+.btn-ylw{background:var(--ylw);color:#fff}
+.btn-ylw:hover{background:#A06700}
+.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:#F0F4F8;color:var(--txt);border:1px solid var(--bdr)}
+.btn-ghost:hover{background:#E2E8F0}
+.btn-pri{background:var(--sec);color:#fff}
+.btn-pri:hover{background:#1a5a9a}
+.btn-sm{padding:7px 14px;font-size:13px}
+
+/* EMPTY */
+.empty{text-align:center;padding:50px 20px;color:var(--mut)}
+.empty .ico{font-size:50px;margin-bottom:12px}
+
+/* TOAST */
+.toast-container{position:fixed;top:66px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+.toast{background:#1E293B;color:#fff;padding:12px 18px;border-radius:8px;font-size:14px;font-weight:600;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);min-width:220px;animation:slideIn .2s ease;display:flex;align-items:center;gap:10px}
+.toast.grn{background:var(--grn)}.toast.red{background:var(--red)}.toast.ylw{background:var(--ylw)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+@keyframes fadeOut{to{transform:translateX(110%);opacity:0}}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;
+  align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:480px;margin:auto;overflow:hidden;
+  box-shadow:0 8px 40px rgba(0,0,0,.25)}
+.modal-hdr{padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;background:#F8FAFC}
+.modal-title{font-size:16px;font-weight:800;color:var(--pri)}
+.modal-body{padding:20px}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end;gap:10px;background:#F8FAFC}
+
+/* TABS */
+.tabs{display:flex;gap:0;background:#F0F4F8;border-radius:8px;padding:3px;flex-wrap:wrap;margin-bottom:16px}
+.tab-btn{padding:9px 18px;border:none;border-radius:6px;background:none;font-size:14px;font-weight:700;
+  color:var(--mut);cursor:pointer;white-space:nowrap}
+.tab-btn.active{background:var(--pri);color:#fff}
+
+/* FORM */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:4px;text-transform:uppercase}
+.form-control{width:100%;padding:11px 14px;border:1px solid var(--bdr);border-radius:8px;font-size:14px;background:#fff}
+.form-control:focus{outline:none;border-color:var(--sec)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast-container" id="toastContainer"></div>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBox">
+    <div class="modal-hdr"><span class="modal-title" id="modalTitle">Modal</span>
+      <button onclick="closeModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut)">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SHARED STORAGE — mesma key do sistema logístico
+   ============================================================ */
+const LS_KEY = 'aceleratime_log_v2';
+let STATE = {};
+
+const STATUS_PED = {
+  novo:        {label:'Novo',               color:'#1A6B9A', bg:'#D6EAF8', ico:'🆕'},
+  em_producao: {label:'Em Produção',        color:'#A04000', bg:'#FDEBD0', ico:'⚙️'},
+  pronto:      {label:'Pronto p/ Embarque', color:'#1E7A1E', bg:'#D4EFDF', ico:'✅'},
+  expedido:    {label:'Expedido',           color:'#6B21A8', bg:'#EDE7F6', ico:'🚚'},
+  cancelado:   {label:'Cancelado',          color:'#666',    bg:'#EDEDED', ico:'❌'},
+};
+
+/* ============================================================
+   ESTOQUE — funções espelhadas do sistema logístico
+   ============================================================ */
+function pad(n){return n<10?'0'+n:n}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function fmtDateTime(){const n=new Date();return pad(n.getHours())+':'+pad(n.getMinutes())}
+
+function registrarMovEstoque(itemId, tipo, quantidade, origem, obs, usuario, refId){
+  const est = (STATE.estoque||[]).find(e=>e.id===itemId);
+  if(!est) return;
+  const qty = Number(quantidade)||0;
+  if(qty<=0) return;
+  if(!est.movimentacoes) est.movimentacoes=[];
+  est.movimentacoes.push({
+    id:'mov-'+Date.now(), tipo, quantidade:qty,
+    origem:origem||'manual', obs:obs||'', ref_id:refId||'',
+    data:todayStr(), hora:fmtDateTime(),
+    usuario: usuario||_operadorName||'Produção'
+  });
+  if(tipo==='entrada') est.quantidade_atual=(est.quantidade_atual||0)+qty;
+  else if(tipo==='saida') est.quantidade_atual=Math.max(0,(est.quantidade_atual||0)-qty);
+  else if(tipo==='ajuste') est.quantidade_atual=qty;
+  saveState();
+}
+
+function encontrarItemEstoque(nomeProduto){
+  if(!nomeProduto) return null;
+  const nome = nomeProduto.toLowerCase();
+  return (STATE.estoque||[]).find(i=>
+    i.nome.toLowerCase()===nome ||
+    nome.includes(i.nome.toLowerCase()) ||
+    i.nome.toLowerCase().includes(nome)
+  );
+}
+
+const UNIDADES = ['DEPET CG','DEPET JP','DEPET CE','DEPET PE','DEPET RN','FPACK','NOVO AMBIENTAL','Outro'];
+
+let _operadorName = '';
+let _tabAtivo = 'producao'; // 'producao' | 'prontos' | 'todos'
+
+/* ============================================================
+   STATE
+   ============================================================ */
+function loadState(){
+  try{const raw=localStorage.getItem(LS_KEY);if(raw)STATE=JSON.parse(raw);}catch(e){}
+  if(!STATE.pedidos) STATE.pedidos=[];
+  if(!STATE.user) STATE.user={name:'Operador',role:'Operador Produção'};
+}
+function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(STATE));}catch(e){}}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function fmtDate(s){if(!s)return'—';const[y,m,d]=s.split('-');return d+'/'+m+'/'+y}
+function nowStr(){return todayStr()+' '+fmtDateTime()}
+
+function toast(msg, type=''){
+  const div=document.createElement('div');
+  div.className='toast'+(type?' '+type:'');
+  div.innerHTML='<span>'+msg+'</span>';
+  document.getElementById('toastContainer').appendChild(div);
+  setTimeout(()=>{div.style.animation='fadeOut .3s ease forwards';setTimeout(()=>div.remove(),300)},3000);
+}
+
+function openModal(title,body,foot){
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').innerHTML=body;
+  document.getElementById('modalFoot').innerHTML=foot||'<button class="btn btn-ghost" onclick="closeModal()">Fechar</button>';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+/* ============================================================
+   LOGIN OPERADOR
+   ============================================================ */
+function renderLogin(){
+  document.getElementById('app').innerHTML=`
+  <div style="min-height:100vh;background:var(--pri);display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="background:#fff;border-radius:16px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 12px 50px rgba(0,0,0,.3)">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:48px;margin-bottom:8px">🏭</div>
+        <h1 style="font-size:26px;font-weight:900;color:var(--pri)">⚡ ACELERA <em style="color:var(--acc);font-style:normal">TIME</em></h1>
+        <p style="font-size:14px;color:var(--mut);margin-top:6px">Sistema de Produção</p>
+      </div>
+      <div class="form-group">
+        <label>Seu nome</label>
+        <input class="form-control" id="opNome" placeholder="Ex: João Operador" style="font-size:16px;padding:13px">
+      </div>
+      <div class="form-group">
+        <label>Setor</label>
+        <select class="form-control" id="opSetor" style="font-size:16px;padding:13px">
+          <option value="Produção">Produção</option>
+          <option value="Estoque">Estoque</option>
+          <option value="Expedição">Expedição</option>
+          <option value="Supervisor">Supervisor</option>
+        </select>
+      </div>
+      <button onclick="doLoginOp()" style="width:100%;padding:14px;background:var(--grn);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;margin-top:6px">
+        ✅ Acessar Produção
+      </button>
+      <div style="margin-top:20px;text-align:center">
+        <a href="../logistica/index.html" style="font-size:13px;color:var(--sec)">← Voltar ao Sistema Logístico</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function doLoginOp(){
+  const nome = (document.getElementById('opNome').value||'').trim();
+  const setor = document.getElementById('opSetor').value;
+  if(!nome){toast('⚠️ Digite seu nome','ylw');return;}
+  _operadorName = nome+' ('+setor+')';
+  renderProd();
+}
+
+/* ============================================================
+   RENDER PRINCIPAL
+   ============================================================ */
+function renderProd(){
+  loadState();
+  const peds = STATE.pedidos||[];
+  const hoje = todayStr();
+  const countNovo = peds.filter(p=>p.status==='novo').length;
+  const countProd = peds.filter(p=>p.status==='em_producao').length;
+  const countPronto = peds.filter(p=>p.status==='pronto').length;
+  const countExp = peds.filter(p=>p.status==='expedido').length;
+
+  let lista;
+  if(_tabAtivo==='producao') lista = peds.filter(p=>p.status==='novo'||p.status==='em_producao');
+  else if(_tabAtivo==='prontos') lista = peds.filter(p=>p.status==='pronto');
+  else lista = peds.filter(p=>p.status!=='cancelado');
+
+  // Sort: urgente first, then by prazo
+  lista = lista.slice().sort((a,b)=>{
+    if(a.prioridade==='urgente'&&b.prioridade!=='urgente') return -1;
+    if(b.prioridade==='urgente'&&a.prioridade!=='urgente') return 1;
+    return (a.prazo||'').localeCompare(b.prazo||'');
+  });
+
+  document.getElementById('app').innerHTML=`
+  <div class="topbar">
+    <div class="topbar-logo">⚡ ACELERA <em>TIME</em> <span style="font-size:12px;opacity:.6;font-weight:400">— Produção</span></div>
+    <div class="topbar-right">
+      <span>🏭 ${_operadorName}</span>
+      <button onclick="renderLogin()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer">Sair</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="stat-row">
+      <div class="stat-card sc-blue"><div class="stat-num">${countNovo}</div><div class="stat-lbl">🆕 Novos</div></div>
+      <div class="stat-card sc-ylw"><div class="stat-num">${countProd}</div><div class="stat-lbl">⚙️ Em Produção</div></div>
+      <div class="stat-card sc-grn"><div class="stat-num">${countPronto}</div><div class="stat-lbl">✅ Prontos</div></div>
+      <div class="stat-card sc-pur"><div class="stat-num">${countExp}</div><div class="stat-lbl">🚚 Expedidos</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn ${_tabAtivo==='producao'?'active':''}" onclick="_tabAtivo='producao';renderProd()">⚙️ Em Produção (${countNovo+countProd})</button>
+      <button class="tab-btn ${_tabAtivo==='prontos'?'active':''}" onclick="_tabAtivo='prontos';renderProd()">✅ Prontos (${countPronto})</button>
+      <button class="tab-btn ${_tabAtivo==='todos'?'active':''}" onclick="_tabAtivo='todos';renderProd()">📋 Todos</button>
+    </div>
+
+    <div class="sec-hdr">
+      <div class="sec-title">
+        ${_tabAtivo==='producao'?'📋 Pedidos para Produzir':_tabAtivo==='prontos'?'✅ Prontos para Expedição':'📋 Todos os Pedidos'}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="renderProd()">🔄 Atualizar</button>
+    </div>
+
+    ${lista.length===0?`<div class="empty"><div class="ico">${_tabAtivo==='prontos'?'✅':'📭'}</div>
+      <p>${_tabAtivo==='prontos'?'Nenhum pedido pronto para expedição no momento.':'Nenhum pedido encontrado nessa categoria.'}</p>
+      <button class="btn btn-ghost" style="margin-top:14px" onclick="_tabAtivo='todos';renderProd()">Ver todos</button>
+    </div>`:lista.map(p=>renderPedCard(p)).join('')}
+
+    <div style="margin-top:24px;text-align:center">
+      <button class="btn btn-ghost" onclick="abrirNovoPedido()">➕ Lançar Novo Pedido</button>
+      <a href="../logistica/index.html" style="margin-left:14px;font-size:13px;color:var(--sec)">← Sistema Logístico</a>
+    </div>
+  </div>`;
+}
+
+function renderPedCard(p){
+  const s = STATUS_PED[p.status]||{};
+  const hoje = todayStr();
+  const vencido = p.prazo<hoje && p.status!=='expedido' && p.status!=='cancelado';
+  const borderClass = p.status==='pronto'?'pronto':p.prioridade||'normal';
+
+  return `<div class="ped-card ${borderClass}">
+    <div class="ped-head">
+      <div>
+        <div class="ped-num">${p.numero}</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:2px">${p.data_criacao?'Criado: '+fmtDate(p.data_criacao):''}</div>
+      </div>
+      <div class="ped-badges">
+        ${p.prioridade==='urgente'?'<span class="badge" style="background:#FEE2E2;color:#B91C1C">🔴 URGENTE</span>':
+          p.prioridade==='baixa'?'<span class="badge" style="background:#F1F5F9;color:#64748B">🔵 Baixa</span>':''}
+        ${vencido?'<span class="badge" style="background:#FEE2E2;color:#B91C1C">⚠️ VENCIDO</span>':''}
+        <span class="badge" style="background:${s.bg};color:${s.color}">${s.ico} ${s.label}</span>
+      </div>
+    </div>
+    <div class="ped-body">
+      <div class="ped-field"><div class="ped-label">Cliente</div><div class="ped-val">${p.cliente}</div></div>
+      <div class="ped-field"><div class="ped-label">Unidade</div><div class="ped-val"><span style="background:#EFF6FF;color:var(--sec);padding:2px 10px;border-radius:20px;font-size:12px;font-weight:700">${p.unidade||'—'}</span></div></div>
+      <div class="ped-field" style="grid-column:1/-1">
+        <div class="ped-label">Produto</div>
+        <div class="ped-val" style="color:var(--acc);font-size:16px">${p.produto}</div>
+      </div>
+      <div class="ped-field"><div class="ped-label">Quantidade</div><div class="ped-val" style="font-size:18px;font-weight:900">${p.quantidade}</div></div>
+      <div class="ped-field"><div class="ped-label">Prazo</div>
+        <div class="ped-val" style="${vencido?'color:var(--red);font-weight:800':''}">
+          ${fmtDate(p.prazo)}${p.prazo===hoje?' 📅 HOJE':''}${vencido?' ⚠️':''}
+        </div>
+      </div>
+      ${p.observacoes?`<div class="ped-field" style="grid-column:1/-1"><div class="ped-label">Observação</div><div class="ped-val" style="font-size:13px;color:var(--mut)">💬 ${p.observacoes}</div></div>`:''}
+    </div>
+    <div class="ped-actions">
+      ${p.status==='novo'?`<button class="btn btn-ylw btn-sm" onclick="atualizarStatus('${p.id}','em_producao')">⚙️ Iniciar Produção</button>`:''}
+      ${p.status==='em_producao'?`<button class="btn btn-grn" onclick="confirmarPronto('${p.id}')">✅ Marcar como PRONTO</button>`:''}
+      ${p.status==='pronto'?`<div style="display:flex;align-items:center;gap:10px;flex:1">
+        <span style="font-size:14px;font-weight:700;color:var(--grn)">✅ Aguardando expedição pelo setor logístico</span>
+      </div>`:''}
+      ${p.status!=='cancelado'&&p.status!=='expedido'?`<button class="btn btn-ghost btn-sm" onclick="verHistorico('${p.id}')">📋 Histórico</button>`:''}
+      ${p.status==='novo'||p.status==='em_producao'?`<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="atualizarStatus('${p.id}','cancelado')">✕ Cancelar</button>`:''}
+      <button class="btn btn-ghost btn-sm" style="color:var(--red);margin-left:auto" title="Excluir pedido (apenas Supervisor)" onclick="confirmarExcluirPedido('${p.id}')">🗑️</button>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   ACTIONS
+   ============================================================ */
+function atualizarStatus(id, novoStatus){
+  const p = STATE.pedidos.find(x=>x.id===id);
+  if(!p) return;
+  const old = p.status;
+  p.status = novoStatus;
+  if(!p.historico) p.historico=[];
+  p.historico.push({
+    data:todayStr(), hora:fmtDateTime(),
+    usuario:_operadorName,
+    msg:`Status: ${STATUS_PED[old]?.label||old} → ${STATUS_PED[novoStatus].label}`
+  });
+  saveState();
+  toast(`✅ ${p.numero}: ${STATUS_PED[novoStatus].label}`,'grn');
+  renderProd();
+}
+
+function confirmarPronto(id){
+  const p = STATE.pedidos.find(x=>x.id===id);
+  if(!p) return;
+  openModal(
+    '✅ Confirmar Pedido Pronto',
+    `<div style="text-align:center;padding:10px 0 20px">
+      <div style="font-size:48px;margin-bottom:10px">✅</div>
+      <div style="font-size:20px;font-weight:800;color:var(--pri)">${p.numero}</div>
+      <div style="font-size:15px;color:var(--mut);margin-top:4px">${p.produto} — ${p.quantidade}</div>
+      <div style="font-size:14px;color:var(--acc);font-weight:700;margin-top:4px">Cliente: ${p.cliente}</div>
+    </div>
+    <div class="form-group">
+      <label>Observação (opcional)</label>
+      <input class="form-control" id="prodObs" placeholder="Ex: Material conferido e embalado">
+    </div>
+    <div style="background:#D1FAE5;border:1px solid #6EE7B7;border-radius:8px;padding:12px;font-size:13px;color:#065F46;text-align:center">
+      Ao confirmar, o pedido ficará disponível para expedição pela equipe logística.
+    </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-grn btn-lg" onclick="salvarPronto('${id}')">✅ CONFIRMAR PRONTO</button>`,
+  );
+}
+
+function salvarPronto(id){
+  const obs = document.getElementById('prodObs')?.value||'';
+  const p = STATE.pedidos.find(x=>x.id===id);
+  if(!p) return;
+  p.status='pronto';
+  if(!p.historico) p.historico=[];
+  p.historico.push({
+    data:todayStr(), hora:fmtDateTime(),
+    usuario:_operadorName,
+    msg:`✅ Pedido PRONTO para embarque${obs?' — '+obs:''}`
+  });
+  // Auto-estoque: registra entrada quando produção conclui
+  const itemEst = encontrarItemEstoque(p.produto);
+  if(itemEst){
+    const qty = parseInt((p.quantidade||'').replace(/\D/g,''))||1;
+    registrarMovEstoque(itemEst.id,'entrada',qty,'producao',
+      `Produção concluída — ${p.numero}${obs?' — '+obs:''}`, _operadorName, p.id);
+    toast(`📦 Estoque: +${qty} ${itemEst.unidade_medida||'un'} de ${itemEst.nome}`,'grn');
+  }
+  saveState();
+  closeModal();
+  toast('✅ Pedido marcado como PRONTO!','grn');
+  renderProd();
+}
+
+function confirmarExcluirPedido(id){
+  const setor = _operadorName.includes('Supervisor')?'sup':'op';
+  if(setor!=='sup'){toast('🔒 Apenas Supervisores podem excluir pedidos','red');return;}
+  const p = STATE.pedidos.find(x=>x.id===id);
+  if(!p) return;
+  openModal('🗑️ Excluir Pedido',
+    `<div style="text-align:center;padding:10px 0 16px">
+      <div style="font-size:36px;margin-bottom:8px">⚠️</div>
+      <div style="font-size:15px;font-weight:700">Excluir <b>${p.numero}</b>?</div>
+      <div style="color:var(--mut);font-size:13px;margin-top:6px">${p.produto} — ${p.cliente}<br>Esta ação não pode ser desfeita.</div>
+    </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-red" onclick="excluirPedido('${id}')">🗑️ Confirmar Exclusão</button>`,
+  );
+}
+
+function excluirPedido(id){
+  STATE.pedidos = (STATE.pedidos||[]).filter(x=>x.id!==id);
+  saveState();
+  closeModal();
+  toast('🗑️ Pedido excluído','ylw');
+  renderProd();
+}
+
+function verHistorico(id){
+  const p = STATE.pedidos.find(x=>x.id===id);
+  if(!p) return;
+  openModal(
+    '📋 Histórico — '+p.numero,
+    `<div style="font-size:14px;margin-bottom:12px"><b>${p.produto}</b> — ${p.quantidade}<br><span style="color:var(--mut)">${p.cliente}</span></div>
+    <div style="border:1px solid var(--bdr);border-radius:8px;overflow:hidden">
+      ${(p.historico||[]).slice().reverse().map(h=>`
+        <div style="padding:10px 14px;border-bottom:1px solid #F0F4F8;display:flex;gap:10px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--sec);flex-shrink:0;margin-top:5px"></div>
+          <div style="flex:1;font-size:13px">${h.msg}</div>
+          <div style="font-size:11px;color:var(--mut);white-space:nowrap">${h.data?fmtDate(h.data):''} ${h.hora||''}</div>
+        </div>`).join('')||'<div style="padding:14px;color:var(--mut);text-align:center">Sem histórico</div>'}
+    </div>`,
+  );
+}
+
+function abrirNovoPedido(){
+  openModal(
+    '➕ Lançar Novo Pedido',
+    `<div class="form-group"><label>Número do Pedido *</label>
+      <input class="form-control" id="np-num" placeholder="PED-XXX"></div>
+    <div class="form-group"><label>Cliente *</label>
+      <input class="form-control" id="np-cli" placeholder="Nome do cliente"></div>
+    <div class="form-group"><label>Unidade *</label>
+      <select class="form-control" id="np-unidade">
+        <option value="">Selecione a unidade...</option>
+        ${UNIDADES.map(u=>`<option value="${u}">${u}</option>`).join('')}
+      </select></div>
+    <div class="form-group"><label>Produto *</label>
+      <input class="form-control" id="np-prod" placeholder="Ex: Embalagens PET 2L"></div>
+    <div class="form-group"><label>Quantidade *</label>
+      <input class="form-control" id="np-qtd" placeholder="Ex: 500 un"></div>
+    <div class="form-group"><label>Prazo de Entrega *</label>
+      <input class="form-control" type="date" id="np-prazo" value="${todayStr()}"></div>
+    <div class="form-group"><label>Prioridade</label>
+      <select class="form-control" id="np-pri">
+        <option value="normal">Normal</option>
+        <option value="urgente">🔴 Urgente</option>
+        <option value="baixa">🔵 Baixa</option>
+      </select></div>
+    <div class="form-group"><label>Observações</label>
+      <textarea class="form-control" id="np-obs" style="min-height:60px" placeholder="Instruções especiais..."></textarea></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-pri" onclick="salvarNovoPedido()">💾 Criar Pedido</button>`,
+  );
+}
+
+function salvarNovoPedido(){
+  const num = document.getElementById('np-num').value.trim();
+  const cli = document.getElementById('np-cli').value.trim();
+  const und = document.getElementById('np-unidade').value;
+  const prod = document.getElementById('np-prod').value.trim();
+  const qtd = document.getElementById('np-qtd').value.trim();
+  const prazo = document.getElementById('np-prazo').value;
+  if(!num||!cli||!und||!prod||!qtd||!prazo){
+    toast('⚠️ Preencha todos os campos obrigatórios','ylw'); return;
+  }
+  if(!STATE.pedidos) STATE.pedidos=[];
+  if(!STATE.nextPedId) STATE.nextPedId=310;
+  const newId='ped-op-'+Date.now();
+  STATE.pedidos.push({
+    id:newId, numero:num, cliente:cli, unidade:und,
+    produto:prod, quantidade:qtd, prazo,
+    prioridade:document.getElementById('np-pri').value,
+    observacoes:document.getElementById('np-obs').value,
+    status:'novo', data_criacao:todayStr(),
+    historico:[{data:todayStr(),hora:fmtDateTime(),usuario:_operadorName,msg:'Pedido criado pela produção'}],
+  });
+  saveState();
+  closeModal();
+  toast('✅ Pedido criado!','grn');
+  renderProd();
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init(){
+  loadState();
+  renderLogin();
+}
+init();
+</script>
+</body>
+</html>
