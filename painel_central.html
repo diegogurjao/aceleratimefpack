@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACELERA TIME — Painel Central</title>
+<style>
+  :root {
+    --primary: #1A3A5C;
+    --secondary: #2E75B6;
+    --accent: #E8671A;
+    --green: #1E7A1E;
+    --red: #C00000;
+    --yellow: #E6A817;
+    --orange: #E8671A;
+    --bg: #F4F6F9;
+    --card: #FFFFFF;
+    --border: #DDE3EC;
+    --text: #2C3E50;
+    --muted: #7F8C9A;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+  /* TOP BAR */
+  .topbar {
+    background: var(--primary); color: white; padding: 0 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  .topbar-logo { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+  .topbar-logo span { color: var(--accent); }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .topbar-user { font-size: 13px; opacity: 0.85; }
+  .badge-notif {
+    background: var(--accent); color: white; border-radius: 50%;
+    width: 26px; height: 26px; display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+
+  /* SIDEBAR */
+  .layout { display: flex; min-height: calc(100vh - 56px); }
+  .sidebar {
+    width: 220px; background: var(--primary); padding: 16px 0;
+    flex-shrink: 0; display: flex; flex-direction: column; gap: 2px;
+  }
+  .sidebar-section { padding: 6px 16px 2px; font-size: 10px; font-weight: 700;
+    color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; color: rgba(255,255,255,0.75);
+    cursor: pointer; transition: all 0.15s; font-size: 13.5px; border-radius: 0;
+    border-left: 3px solid transparent;
+  }
+  .sidebar-item:hover { background: rgba(255,255,255,0.08); color: white; }
+  .sidebar-item.active { background: rgba(46,117,182,0.35); color: white;
+    border-left-color: var(--accent); font-weight: 600; }
+  .sidebar-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* MAIN */
+  .main { flex: 1; padding: 24px; overflow-auto; }
+  .page-title { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+  .today-badge {
+    display: inline-block; background: var(--secondary); color: white;
+    font-size: 11px; padding: 2px 10px; border-radius: 20px; margin-left: 8px; vertical-align: middle;
+  }
+
+  /* CARDS ROW */
+  .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 900px) { .cards-row { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .cards-row { grid-template-columns: 1fr 1fr; } }
+  .stat-card {
+    background: var(--card); border-radius: 12px; padding: 18px 20px;
+    box-shadow: var(--shadow); border-left: 5px solid transparent;
+    display: flex; align-items: center; gap: 16px;
+    transition: transform 0.15s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+  .stat-card.blue { border-left-color: var(--secondary); }
+  .stat-card.green { border-left-color: var(--green); }
+  .stat-card.red { border-left-color: var(--red); }
+  .stat-card.yellow { border-left-color: var(--yellow); }
+  .stat-icon { font-size: 28px; }
+  .stat-info .stat-num { font-size: 28px; font-weight: 800; line-height: 1; }
+  .stat-info .stat-label { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .stat-card.blue .stat-num { color: var(--secondary); }
+  .stat-card.green .stat-num { color: var(--green); }
+  .stat-card.red .stat-num { color: var(--red); }
+  .stat-card.yellow .stat-num { color: var(--yellow); }
+
+  /* GRID 2 COLS */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+  .grid3 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .grid3 { grid-template-columns: 1fr; } }
+
+  /* CARD */
+  .card { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+  .card-header {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  .card-action { font-size: 12px; color: var(--secondary); cursor: pointer; font-weight: 600; }
+  .card-body { padding: 0; }
+
+  /* TASK LIST */
+  .task-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 18px; border-bottom: 1px solid #F0F3F7;
+    cursor: pointer; transition: background 0.1s;
+  }
+  .task-item:hover { background: #F8FAFC; }
+  .task-item:last-child { border-bottom: none; }
+  .task-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .task-info { flex: 1; }
+  .task-name { font-size: 13px; font-weight: 600; }
+  .task-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .status-badge {
+    font-size: 10px; padding: 3px 9px; border-radius: 20px;
+    font-weight: 700; white-space: nowrap; flex-shrink: 0;
+  }
+  .s-nao-iniciada { background: #EDEDED; color: #666; }
+  .s-em-andamento { background: #D6EAF8; color: #1A6B9A; }
+  .s-concluida { background: #D4EFDF; color: #1E7A1E; }
+  .s-atrasada { background: #FADBD8; color: #C00000; }
+  .s-aguard-aprovacao { background: #FDEBD0; color: #A04000; }
+  .s-aguard-setor { background: #FEF9E7; color: #7D6608; }
+  .s-bloqueado { background: #F5EEF8; color: #6C3483; }
+
+  /* SECTOR TABLE */
+  .sector-table { width: 100%; border-collapse: collapse; }
+  .sector-table th { font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; padding: 10px 14px; text-align: left; background: #F8FAFC; }
+  .sector-table td { padding: 10px 14px; border-bottom: 1px solid #F0F3F7; font-size: 13px; }
+  .sector-table tr:last-child td { border-bottom: none; }
+  .sector-table tr:hover td { background: #F8FAFC; }
+  .progress-bar { height: 8px; border-radius: 4px; background: #E8ECF0; overflow: hidden; min-width: 80px; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+  /* ALERT ITEMS */
+  .alert-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 18px; border-bottom: 1px solid #F0F3F7;
+  }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .alert-text .alert-title { font-size: 13px; font-weight: 600; }
+  .alert-text .alert-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .alert-time { font-size: 11px; color: var(--muted); white-space: nowrap; margin-left: auto; }
+
+  /* APPROVAL ITEMS */
+  .approval-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 18px; border-bottom: 1px solid #F0F3F7;
+  }
+  .approval-item:last-child { border-bottom: none; }
+  .approval-info { flex: 1; }
+  .approval-title { font-size: 13px; font-weight: 600; }
+  .approval-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .approval-value { font-size: 13px; font-weight: 700; color: var(--primary); margin-right: 8px; white-space: nowrap; }
+  .btn-approve { background: var(--green); color: white; border: none; border-radius: 6px;
+    padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
+  .btn-reject { background: #F0F3F7; color: var(--red); border: 1px solid #DDD; border-radius: 6px;
+    padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
+
+  /* DEPENDENCY ITEMS */
+  .dep-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px; border-bottom: 1px solid #F0F3F7;
+    font-size: 13px;
+  }
+  .dep-item:last-child { border-bottom: none; }
+  .dep-sector { font-weight: 700; color: var(--primary); }
+  .dep-arrow { color: var(--muted); font-size: 12px; }
+  .dep-status { margin-left: auto; }
+
+  /* LOG ITEMS */
+  .log-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 18px; border-bottom: 1px solid #F0F3F7; font-size: 12px;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .log-text { flex: 1; }
+  .log-user { font-weight: 600; }
+  .log-time { color: var(--muted); font-size: 11px; }
+
+  /* BOTTOM NAV (mobile) */
+  .bottom-nav {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--primary); height: 60px;
+    display: flex; justify-content: space-around; align-items: center;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.2); z-index: 200;
+  }
+  .bottom-nav-item { display: flex; flex-direction: column; align-items: center;
+    gap: 2px; color: rgba(255,255,255,0.6); font-size: 10px; cursor: pointer; }
+  .bottom-nav-item.active { color: var(--accent); }
+  .bottom-nav-item .icon { font-size: 20px; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .bottom-nav { display: flex; }
+    .main { padding: 16px 12px 70px; }
+    .topbar-user { display: none; }
+  }
+
+  /* LOGISTICS MINI */
+  .logistics-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 18px; }
+  .log-mini-card {
+    background: #F8FAFC; border-radius: 8px; padding: 12px 14px;
+    text-align: center; border: 1px solid var(--border);
+  }
+  .log-mini-num { font-size: 24px; font-weight: 800; }
+  .log-mini-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .lm-blue .log-mini-num { color: var(--secondary); }
+  .lm-green .log-mini-num { color: var(--green); }
+  .lm-yellow .log-mini-num { color: var(--yellow); }
+  .lm-red .log-mini-num { color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">⚡ ACELERA <span>TIME</span></div>
+  <div class="topbar-right">
+    <span class="topbar-user">👤 Carlos Silva — Gerente</span>
+    <div class="badge-notif" title="3 notificações">3</div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">Principal</div>
+    <div class="sidebar-item active"><span class="icon">🏠</span> Painel Central</div>
+    <div class="sidebar-item"><span class="icon">✅</span> Minhas Tarefas</div>
+    <div class="sidebar-item"><span class="icon">🔔</span> Notificações</div>
+
+    <div class="sidebar-section">Operação</div>
+    <div class="sidebar-item"><span class="icon">🚚</span> Logística</div>
+    <div class="sidebar-item"><span class="icon">📋</span> Rotina por Setor</div>
+    <div class="sidebar-item"><span class="icon">🔄</span> PDCA</div>
+
+    <div class="sidebar-section">Gestão</div>
+    <div class="sidebar-item"><span class="icon">✔️</span> Aprovações</div>
+    <div class="sidebar-item"><span class="icon">📊</span> Relatórios</div>
+
+    <div class="sidebar-section">Sistema</div>
+    <div class="sidebar-item"><span class="icon">⚙️</span> Admin</div>
+    <div class="sidebar-item"><span class="icon">🛠️</span> Skills Adm.</div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <div class="page-title">Painel Central <span class="today-badge">Hoje: Qui, 02/04/2026</span></div>
+    <div class="page-subtitle">Visão geral da operação — Perfil: Gerente</div>
+
+    <!-- STATUS CARDS -->
+    <div class="cards-row">
+      <div class="stat-card blue">
+        <div class="stat-icon">📋</div>
+        <div class="stat-info">
+          <div class="stat-num">47</div>
+          <div class="stat-label">Tarefas do Dia</div>
+        </div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+          <div class="stat-num">29</div>
+          <div class="stat-label">Concluídas</div>
+        </div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">⏰</div>
+        <div class="stat-info">
+          <div class="stat-num">5</div>
+          <div class="stat-label">Atrasadas</div>
+        </div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-info">
+          <div class="stat-num">13</div>
+          <div class="stat-label">Em Andamento</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESUMO POR SETOR + ALERTAS CRÍTICOS -->
+    <div class="grid3">
+      <!-- RESUMO POR SETOR -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🏭 Resumo por Setor</div>
+          <span class="card-action">Ver detalhes →</span>
+        </div>
+        <div class="card-body">
+          <table class="sector-table">
+            <thead>
+              <tr>
+                <th>Setor</th>
+                <th>Progresso</th>
+                <th>✅</th>
+                <th>🔴</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>Logística</b></td>
+                <td>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width:75%;background:#2E75B6"></div>
+                  </div>
+                </td>
+                <td style="color:#1E7A1E;font-weight:700">6/8</td>
+                <td style="color:#C00000;font-weight:700">1</td>
+              </tr>
+              <tr>
+                <td><b>Produção</b></td>
+                <td>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width:62%;background:#2E75B6"></div>
+                  </div>
+                </td>
+                <td style="color:#1E7A1E;font-weight:700">5/8</td>
+                <td style="color:#C00000;font-weight:700">2</td>
+              </tr>
+              <tr>
+                <td><b>Financeiro</b></td>
+                <td>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width:87%;background:#1E7A1E"></div>
+                  </div>
+                </td>
+                <td style="color:#1E7A1E;font-weight:700">7/8</td>
+                <td style="color:#C00000;font-weight:700">0</td>
+              </tr>
+              <tr>
+                <td><b>Compras</b></td>
+                <td>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width:50%;background:#E6A817"></div>
+                  </div>
+                </td>
+                <td style="color:#1E7A1E;font-weight:700">4/8</td>
+                <td style="color:#C00000;font-weight:700">1</td>
+              </tr>
+              <tr>
+                <td><b>Manutenção</b></td>
+                <td>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width:100%;background:#1E7A1E"></div>
+                  </div>
+                </td>
+                <td style="color:#1E7A1E;font-weight:700">8/8</td>
+                <td style="color:#1E7A1E;font-weight:700">0</td>
+              </tr>
+              <tr>
+                <td><b>RH</b></td>
+                <td>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width:62%;background:#2E75B6"></div>
+                  </div>
+                </td>
+                <td style="color:#1E7A1E;font-weight:700">5/8</td>
+                <td style="color:#C00000;font-weight:700">0</td>
+              </tr>
+              <tr>
+                <td><b>Comercial</b></td>
+                <td>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width:37%;background:#C00000"></div>
+                  </div>
+                </td>
+                <td style="color:#1E7A1E;font-weight:700">3/8</td>
+                <td style="color:#C00000;font-weight:700">3</td>
+              </tr>
+              <tr>
+                <td><b>Seg. Trabalho</b></td>
+                <td>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width:75%;background:#2E75B6"></div>
+                  </div>
+                </td>
+                <td style="color:#1E7A1E;font-weight:700">6/8</td>
+                <td style="color:#C00000;font-weight:700">0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ALERTAS CRÍTICOS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🚨 Alertas Críticos</div>
+          <span class="card-action">Ver todos →</span>
+        </div>
+        <div class="card-body">
+          <div class="alert-item">
+            <div class="alert-icon">🔴</div>
+            <div class="alert-text">
+              <div class="alert-title">Embarque #4521 bloqueado</div>
+              <div class="alert-sub">Financeiro — aguardando aprovação de NF</div>
+            </div>
+            <div class="alert-time">08:45</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-icon">⏰</div>
+            <div class="alert-text">
+              <div class="alert-title">3 tarefas do Comercial atrasadas</div>
+              <div class="alert-sub">Prospecção, follow-up e cotação pendentes</div>
+            </div>
+            <div class="alert-time">09:10</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-icon">🔗</div>
+            <div class="alert-text">
+              <div class="alert-title">Produção → Logística em risco</div>
+              <div class="alert-sub">Pedido #780 ainda não liberado para embarque</div>
+            </div>
+            <div class="alert-time">10:22</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-icon">💰</div>
+            <div class="alert-text">
+              <div class="alert-title">2 aprovações de pagamento pendentes</div>
+              <div class="alert-sub">Total: R$ 12.400 — prazo: hoje</div>
+            </div>
+            <div class="alert-time">11:05</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-icon">⚙️</div>
+            <div class="alert-text">
+              <div class="alert-title">Manutenção preventiva programada</div>
+              <div class="alert-sub">Máquina M-07 — agendado para 14:00</div>
+            </div>
+            <div class="alert-time">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APROVAÇÕES + ATIVIDADES INTERLIGADAS -->
+    <div class="grid2">
+      <!-- APROVAÇÕES PENDENTES -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">✔️ Aprovações Pendentes <span style="background:#E8671A;color:white;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700;margin-left:6px">2</span></div>
+          <span class="card-action">Ver todas →</span>
+        </div>
+        <div class="card-body">
+          <div class="approval-item">
+            <div class="approval-info">
+              <div class="approval-title">Compra de materiais elétricos</div>
+              <div class="approval-sub">Solicitante: João Manutenção · Compras</div>
+            </div>
+            <div class="approval-value">R$ 3.200</div>
+            <button class="btn-approve" onclick="this.textContent='✔ Aprovado';this.style.background='#888'">Aprovar</button>&nbsp;
+            <button class="btn-reject" onclick="this.textContent='✘ Reprovado';this.style.color='#888'">Reprovar</button>
+          </div>
+          <div class="approval-item">
+            <div class="approval-info">
+              <div class="approval-title">Pagamento fornecedor TechParts</div>
+              <div class="approval-sub">Solicitante: Maria Financeiro · Financeiro</div>
+            </div>
+            <div class="approval-value">R$ 9.200</div>
+            <button class="btn-approve" onclick="this.textContent='✔ Aprovado';this.style.background='#888'">Aprovar</button>&nbsp;
+            <button class="btn-reject" onclick="this.textContent='✘ Reprovado';this.style.color='#888'">Reprovar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEPENDÊNCIAS INTERSETORIAIS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔗 Atividades Interligadas</div>
+        </div>
+        <div class="card-body">
+          <div class="dep-item">
+            <span class="dep-sector">Produção</span>
+            <span class="dep-arrow">→ precisa de →</span>
+            <span class="dep-sector">Compras</span>
+            <span class="dep-status"><span class="status-badge s-atrasada">⚠ Atrasado</span></span>
+          </div>
+          <div class="dep-item">
+            <span class="dep-sector">Logística</span>
+            <span class="dep-arrow">→ aguarda →</span>
+            <span class="dep-sector">Comercial</span>
+            <span class="dep-status"><span class="status-badge s-aguard-aprovacao">⏳ Aguard.</span></span>
+          </div>
+          <div class="dep-item">
+            <span class="dep-sector">Compras</span>
+            <span class="dep-arrow">→ aguarda →</span>
+            <span class="dep-sector">Financeiro</span>
+            <span class="dep-status"><span class="status-badge s-concluida">✔ OK</span></span>
+          </div>
+          <div class="dep-item">
+            <span class="dep-sector">Logística</span>
+            <span class="dep-arrow">→ aguarda →</span>
+            <span class="dep-sector">Produção</span>
+            <span class="dep-status"><span class="status-badge s-bloqueado">🔒 Bloq.</span></span>
+          </div>
+          <div class="dep-item">
+            <span class="dep-sector">Financeiro</span>
+            <span class="dep-arrow">→ aguarda →</span>
+            <span class="dep-sector">Direção</span>
+            <span class="dep-status"><span class="status-badge s-em-andamento">⏳ Pendente</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGÍSTICA MINI + HISTÓRICO RECENTE -->
+    <div class="grid2">
+      <!-- LOGÍSTICA RESUMO -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🚚 Logística — Resumo do Dia</div>
+          <span class="card-action" onclick="window.open('painel_logistica.html','_blank')">Abrir painel →</span>
+        </div>
+        <div class="logistics-mini">
+          <div class="log-mini-card lm-blue">
+            <div class="log-mini-num">8</div>
+            <div class="log-mini-label">Embarques</div>
+          </div>
+          <div class="log-mini-card lm-green">
+            <div class="log-mini-num">5</div>
+            <div class="log-mini-label">Entregues</div>
+          </div>
+          <div class="log-mini-card lm-yellow">
+            <div class="log-mini-num">3</div>
+            <div class="log-mini-label">Em Rota</div>
+          </div>
+          <div class="log-mini-card lm-red">
+            <div class="log-mini-num">1</div>
+            <div class="log-mini-label">Bloqueados</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTÓRICO RECENTE -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📝 Histórico Recente</div>
+        </div>
+        <div class="card-body">
+          <div class="log-item">
+            <div class="log-avatar" style="background:#2E75B6">JS</div>
+            <div class="log-text">
+              <span class="log-user">João (Logística)</span> marcou "Conferir embarques" como <b>Concluída</b>
+              <div class="log-time">11:47</div>
+            </div>
+          </div>
+          <div class="log-item">
+            <div class="log-avatar" style="background:#1E7A1E">MF</div>
+            <div class="log-text">
+              <span class="log-user">Maria (Financeiro)</span> criou aprovação de pagamento R$9.200
+              <div class="log-time">11:32</div>
+            </div>
+          </div>
+          <div class="log-item">
+            <div class="log-avatar" style="background:#C00000">PV</div>
+            <div class="log-text">
+              <span class="log-user">Pedro (Produção)</span> marcou pedido #780 como <b>Bloqueado</b>
+              <div class="log-time">10:55</div>
+            </div>
+          </div>
+          <div class="log-item">
+            <div class="log-avatar" style="background:#E8671A">AS</div>
+            <div class="log-text">
+              <span class="log-user">Ana (Compras)</span> atualizou "Verificar cotações" para <b>Em Andamento</b>
+              <div class="log-time">10:22</div>
+            </div>
+          </div>
+          <div class="log-item">
+            <div class="log-avatar" style="background:#7D3C98">RL</div>
+            <div class="log-text">
+              <span class="log-user">Ricardo (Comercial)</span> criou tarefa extraordinária
+              <div class="log-time">09:50</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- BOTTOM NAV (MOBILE) -->
+<div class="bottom-nav">
+  <div class="bottom-nav-item active"><span class="icon">🏠</span>Início</div>
+  <div class="bottom-nav-item"><span class="icon">✅</span>Tarefas</div>
+  <div class="bottom-nav-item"><span class="icon">🚚</span>Logística</div>
+  <div class="bottom-nav-item"><span class="icon">🔔</span>Avisos</div>
+  <div class="bottom-nav-item"><span class="icon">👤</span>Perfil</div>
+</div>
+
+</body>
+</html>
