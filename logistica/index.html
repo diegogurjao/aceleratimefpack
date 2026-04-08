@@ -4332,39 +4332,41 @@ function init(){
 }
 
 
-// ── Firebase Integration ──────────────────────────────
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot }
-  from "https://www.gstatic.com/firebasejs/10.x.x/firebase-firestore.js";
- 
-const firebaseConfig = { apiKey: "AIzaSyClUN_ih7DK3UsNeRQkUV4IKNIOi-CKjO8",
-    authDomain: "aceleratime-916d8.firebaseapp.com",
-    projectId: "aceleratime-916d8",
-    storageBucket: "aceleratime-916d8.firebasestorage.app",
-    messagingSenderId: "396539379769",
-    appId: "1:396539379769:web:e7428b2e064bc2f3eacde8" };
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
- 
-// Sobrescreve saveState e loadState para usar Firestore
-const FS_DOC = "aceleratime/state";
-async function saveState(){
-  try{
-    await setDoc(doc(db, FS_DOC), { data: JSON.stringify(STATE) });
-    localStorage.setItem(LS_KEY, JSON.stringify(STATE)); // backup local
-  }catch(e){ localStorage.setItem(LS_KEY, JSON.stringify(STATE)); }
-}
-async function loadState(){
-  try{
-    const snap = await getDoc(doc(db, FS_DOC));
-    if(snap.exists()) STATE = JSON.parse(snap.data().data);
-  }catch(e){
+// ── Firebase Integration (dynamic import — compatível com GitHub Pages) ──
+(async () => {
+  const FB_VER = '10.12.0';
+  try {
+    const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`);
+    const { getFirestore, doc, setDoc, getDoc }
+      = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore.js`);
+    const firebaseConfig = {
+      apiKey: "AIzaSyClUN_ih7DK3UsNeRQkUV4IKNIOi-CKjO8",
+      authDomain: "aceleratime-916d8.firebaseapp.com",
+      projectId: "aceleratime-916d8",
+      storageBucket: "aceleratime-916d8.firebasestorage.app",
+      messagingSenderId: "396539379769",
+      appId: "1:396539379769:web:e7428b2e064bc2f3eacde8"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    const FS_DOC = "aceleratime/state";
+    saveState = async function(){
+      try{ await setDoc(doc(db, FS_DOC), { data: JSON.stringify(STATE) }); localStorage.setItem(LS_KEY, JSON.stringify(STATE)); }
+      catch(e){ localStorage.setItem(LS_KEY, JSON.stringify(STATE)); }
+    };
+    try{
+      const snap = await getDoc(doc(db, FS_DOC));
+      if(snap.exists()) STATE = JSON.parse(snap.data().data);
+      else { const raw=localStorage.getItem(LS_KEY); if(raw) STATE=JSON.parse(raw); else initDefaultState(); }
+    }catch(e){ const raw=localStorage.getItem(LS_KEY); if(raw) STATE=JSON.parse(raw); else initDefaultState(); }
+    init();
+  } catch(e) {
+    console.warn('Firebase indisponivel:', e.message);
     const raw = localStorage.getItem(LS_KEY);
-    if(raw) STATE = JSON.parse(raw);
+    if(raw){ try{ STATE=JSON.parse(raw); }catch(x){ initDefaultState(); } } else { initDefaultState(); }
+    init();
   }
-  init();
-}
-loadState(); // substitui o init() no final do arquivo
+})();
 </script>
 </body>
-</html>
+                                          </html>
