@@ -412,7 +412,7 @@ const STATUS_AT = {
    ============================================================ */
 const ROLES = {
   admin:       {label:'Administrador', ico:'👑', cor:'#6B21A8', permissions:['view','create','edit','delete','manage_users']},
-  gerente:     {label:'Gerente',       ico:'📊', cor:'#1A3A5C', permissions:['view','create','edit','delete']},
+  gerente:     {label:'Gerente',       ico:'📊', cor:'#1A3A5C', permissions:['view','create','edit','delete','manage_users']},
   supervisor:  {label:'Supervisor',    ico:'🚚', cor:'#2E75B6', permissions:['view','create','edit']},
   operador:    {label:'Operador',      ico:'👤', cor:'#1E7A1E', permissions:['view','create']},
   visualizador:{label:'Visualizador',  ico:'👁️', cor:'#64748B', permissions:['view']},
@@ -768,7 +768,7 @@ document.getElementById('modalOverlay').addEventListener('click',function(e){
 /* ============================================================
    ROUTER / NAVIGATION
    ============================================================ */
-const PAGES=['dashboard','programacao','kanban','embarques','coletas','rotinas','atividades','pedidos','agentes','roteirizacao','usuarios','estoque'];
+const PAGES=['dashboard','programacao','kanban','embarques','coletas','rotinas','atividades','pedidos','agentes','roteirizacao','usuarios','estoque','relatorios'];
 function navigate(page){
   if(!STATE.user){renderLogin();return}
   STATE.currentPage=page;
@@ -795,6 +795,7 @@ function renderPage(page){
     case 'roteirizacao':  main.innerHTML=renderRoteirizacao(); break;
     case 'usuarios':      main.innerHTML=renderUsuarios(); break;
     case 'estoque':       main.innerHTML=renderEstoque(); break;
+    case 'relatorios':    main.innerHTML=renderRelatorios(); break;
   }
 }
 
@@ -889,6 +890,7 @@ function renderApp(){
         ${getAlertasCount()>0?`<span class="nav-badge" style="background:var(--red)">${getAlertasCount()}</span>`:''}
       </div>
 
+      <div class="nav-item" data-page="relatorios" onclick="navigate('relatorios')"><span class="ico">📄</span> Relatórios</div>
       <div class="nav-section">Produção & Estoque</div>
       <div class="nav-item" data-page="estoque" onclick="navigate('estoque')"><span class="ico">🏗️</span> Estoque
         ${(STATE.estoque||[]).filter(i=>i.quantidade_atual<=i.qtd_min).length>0?`<span class="nav-badge" style="background:var(--red)">${STATE.estoque.filter(i=>i.quantidade_atual<=i.qtd_min).length} baixo</span>`:''}
@@ -925,8 +927,8 @@ function renderApp(){
     <div class="bnav-item" data-page="dashboard"    onclick="navigate('dashboard')"><span class="ico">🏠</span>Início</div>
     <div class="bnav-item" data-page="pedidos"      onclick="navigate('pedidos')"><span class="ico">📦</span>Pedidos</div>
     <div class="bnav-item" data-page="kanban"       onclick="navigate('kanban')"><span class="ico">📊</span>Ops.</div>
+    <div class="bnav-item" data-page="relatorios"   onclick="navigate('relatorios')"><span class="ico">📄</span>Relatórios</div>
     <div class="bnav-item" data-page="agentes"      onclick="navigate('agentes')"><span class="ico">🤖</span>IA</div>
-    <div class="bnav-item" data-page="roteirizacao" onclick="navigate('roteirizacao')"><span class="ico">🗺️</span>Rotas</div>
   </nav>`;
 }
 
@@ -4299,6 +4301,160 @@ function excluirUsuario(id){
   closeModal();
   navigate('usuarios');
   toast('🗑️ Usuário excluído','');
+}
+
+/* ============================================================
+   MÓDULO RELATÓRIOS — Gerados pelos Agentes de cada Setor
+   ============================================================ */
+function renderRelatorios(){
+  const today = todayStr();
+  const agora = new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const cfg   = STATE.iaConfig||{};
+  const num   = (cfg.whatsappNumber||'').replace(/\D/g,'');
+  const pedidos  = STATE.pedidos||[];
+  const embs     = getFilteredEmbarques();
+  const cols     = getFilteredColetas();
+  const estoque  = STATE.estoque||[];
+  const ativs    = STATE.atividades||[];
+  const emProd       = pedidos.filter(p=>p.status==='em_producao');
+  const prontos      = pedidos.filter(p=>p.status==='pronto');
+  const atrasadosPed = pedidos.filter(p=>p.prazo<today&&p.status!=='expedido'&&p.status!=='cancelado');
+  const estBaixo     = estoque.filter(i=>i.quantidade_atual<=i.qtd_min);
+  const embHoje    = embs.filter(e=>e.data===today);
+  const embBloq    = embs.filter(e=>e.status==='bloqueado');
+  const embRota    = embs.filter(e=>e.status==='em_rota');
+  const embEntregue= embs.filter(e=>e.status==='entregue'&&e.data===today);
+  const colHoje    = cols.filter(c=>c.data===today);
+  const colProb    = cols.filter(c=>c.status==='problema');
+  const colAndamento=cols.filter(c=>c.status==='em_coleta');
+  const rotDay   = getRotinasDia(today);
+  const rotConc  = Object.values(rotDay).filter(r=>r.status==='concluida').length;
+  const rotTotal = ROTINA_TEMPLATES.filter(r=>r.tipo==='diaria').length;
+  const atHoje   = ativs.filter(a=>a.data===today||a.prazo===today);
+  const atConc   = atHoje.filter(a=>a.status==='concluida').length;
+
+  const apolloMsg = `☀️ *APOLLO — Resumo Diário*\n📅 ${agora}\n\n`
+    +`🏭 PRODUÇÃO\n  • Em Produção: ${emProd.length} | Prontos: ${prontos.length} | Atrasados: ${atrasadosPed.length}\n\n`
+    +`🚚 LOGÍSTICA\n  • Embarques Hoje: ${embHoje.length} | Em Rota: ${embRota.length} | Entregues: ${embEntregue.length}\n`
+    +`  • Coletas Hoje: ${colHoje.length} | Em Andamento: ${colAndamento.length}\n\n`
+    +`✅ ROTINAS: ${rotConc}/${rotTotal} concluídas\n`
+    +`📋 ATIVIDADES: ${atConc}/${atHoje.length} concluídas\n`
+    +`🏗️ ESTOQUE: ${estBaixo.length} item(s) abaixo do mínimo\n`
+    +(embBloq.length>0||`colProb`.length>0||atrasadosPed.length>0?'\n🚨 ALERTAS:\n':'')
+    +(embBloq.length>0?`  • ${embBloq.length} embarque(s) bloqueado(s)\n`:'')
+    +(colProb.length>0?`  • ${colProb.length} coleta(s) com problema\n`:'')
+    +(atrasadosPed.length>0?`  • ${atrasadosPed.length} pedido(s) atrasado(s)\n`:'');
+
+  const zeusMsg = `🔱 *ZEUS — Produção*\n📅 ${agora}\n\n`
+    +`📦 Total: ${pedidos.length} | ⚙️ Produção: ${emProd.length} | ✅ Prontos: ${prontos.length}\n`
+    +(atrasadosPed.length>0?'\n⚠️ ATRASADOS:\n'+atrasadosPed.map(p=>`  • ${p.numero} — ${p.cliente} | ${p.prazo}`).join('\n'):'')
+    +(estBaixo.length>0?'\n🔴 ESTOQUE BAIXO:\n'+estBaixo.map(i=>`  • ${i.nome}: ${i.quantidade_atual}/${i.qtd_min}`).join('\n'):'');
+
+  const hermesMsg = `⚡ *HERMES — Embarques*\n📅 ${agora}\n\n`
+    +`📊 Total: ${embs.length} | 📅 Hoje: ${embHoje.length} | 🚛 Em Rota: ${embRota.length} | ✅ Entregues: ${embEntregue.length}\n`
+    +(embBloq.length>0?'\n🔴 BLOQUEADOS:\n'+embBloq.map(e=>`  • ${e.numero} — ${e.cliente}`).join('\n'):'');
+
+  const poseidonMsg = `🌊 *POSEIDON — Coletas*\n📅 ${agora}\n\n`
+    +`📊 Total: ${cols.length} | 📅 Hoje: ${colHoje.length} | 🔄 Andamento: ${colAndamento.length}\n`
+    +(colProb.length>0?'\n🔴 PROBLEMAS:\n'+colProb.map(c=>`  • ${c.numero} — ${c.fornecedor}`).join('\n'):'');
+
+  function wppBtn(msg,lbl){
+    const link=num?`https://wa.me/${num}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`;
+    return `<a href="${link}" target="_blank" class="btn btn-grn btn-sm">📲 ${lbl}</a>`;
+  }
+  function st(v,l,c='var(--sec)'){return `<div style="background:#F8FAFC;border:1px solid var(--bdr);border-radius:8px;padding:10px 14px;text-align:center"><div style="font-size:22px;font-weight:900;color:${c}">${v}</div><div style="font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;margin-top:2px">${l}</div></div>`;}
+
+  return `
+  <div class="page-hdr"><h1>📄 Relatórios por Setor</h1><p>Gerados automaticamente pelos Agentes IA — ${agora}</p></div>
+
+  <div class="panel" style="margin-bottom:20px;border:2px solid var(--acc)">
+    <div class="panel-hdr" style="background:linear-gradient(135deg,var(--pri),var(--sec));color:#fff">
+      <span class="panel-title" style="color:#fff">☀️ Apollo — Resumo Diário Completo</span>
+      ${wppBtn(apolloMsg,'Enviar Resumo')}
+    </div>
+    <div class="panel-body" style="padding:16px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px">
+        ${st(emProd.length,'Em Produção','var(--ylw)')}
+        ${st(prontos.length,'Prontos','var(--grn)')}
+        ${st(embHoje.length,'Embarques Hoje','var(--sec)')}
+        ${st(colHoje.length,'Coletas Hoje','#6B21A8')}
+        ${st(rotConc+'/'+rotTotal,'Rotinas','var(--grn)')}
+        ${st(embBloq.length+colProb.length+atrasadosPed.length,'Alertas','var(--red)')}
+      </div>
+      <pre style="white-space:pre-wrap;font-family:inherit;font-size:12px;line-height:1.7;color:var(--txt);background:#F8FAFC;border-radius:8px;padding:12px;border:1px solid var(--bdr)">${apolloMsg}</pre>
+    </div>
+  </div>
+
+  <div class="two-col" style="gap:16px">
+  <div>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-hdr" style="background:#A04000;color:#fff"><span class="panel-title" style="color:#fff">🔱 Zeus — Produção &amp; Estoque</span>${wppBtn(zeusMsg,'Enviar')}</div>
+      <div class="panel-body" style="padding:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          ${st(emProd.length,'Em Produção','#A04000')}${st(prontos.length,'Prontos','var(--grn)')}
+          ${st(atrasadosPed.length,'Atrasados','var(--red)')}${st(estBaixo.length,'Est. Baixo','var(--ylw)')}
+        </div>
+        ${atrasadosPed.length>0?`<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 12px;margin-bottom:8px">
+          <div style="font-weight:700;color:var(--red);font-size:12px;margin-bottom:4px">⚠️ Pedidos Atrasados</div>
+          ${atrasadosPed.map(p=>`<div style="font-size:12px;padding:3px 0;border-bottom:1px solid #FEE2E2"><b>${p.numero}</b> — ${p.cliente} <span style="color:var(--red)">${p.prazo}</span></div>`).join('')}
+        </div>`:'<div style="text-align:center;color:var(--grn);font-size:13px;padding:6px">✅ Nenhum pedido atrasado</div>'}
+        ${estBaixo.length>0?`<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:10px 12px">
+          <div style="font-weight:700;color:var(--ylw);font-size:12px;margin-bottom:4px">📦 Estoque Abaixo do Mínimo</div>
+          ${estBaixo.map(i=>`<div style="font-size:12px;padding:3px 0"><b>${i.nome}</b>: ${i.quantidade_atual}/${i.qtd_min} ${i.unidade_medida}</div>`).join('')}
+        </div>`:''}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-hdr" style="background:#0369A1;color:#fff"><span class="panel-title" style="color:#fff">🌊 Poseidon — Coletas</span>${wppBtn(poseidonMsg,'Enviar')}</div>
+      <div class="panel-body" style="padding:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          ${st(colHoje.length,'Hoje','#0369A1')}${st(colAndamento.length,'Andamento','var(--ylw)')}
+          ${st(cols.filter(c=>c.status==='concluida').length,'Concluídas','var(--grn)')}${st(colProb.length,'Problemas','var(--red)')}
+        </div>
+        ${colProb.length>0?`<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 12px">
+          <div style="font-weight:700;color:var(--red);font-size:12px;margin-bottom:4px">🔴 Com Problema</div>
+          ${colProb.map(c=>`<div style="font-size:12px;padding:3px 0"><b>${c.numero}</b> — ${c.fornecedor}</div>`).join('')}
+        </div>`:'<div style="text-align:center;color:var(--grn);font-size:13px;padding:6px">✅ Sem problemas em coletas</div>'}
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-hdr" style="background:#1A5A9A;color:#fff"><span class="panel-title" style="color:#fff">⚡ Hermes — Embarques</span>${wppBtn(hermesMsg,'Enviar')}</div>
+      <div class="panel-body" style="padding:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          ${st(embHoje.length,'Hoje','#1A5A9A')}${st(embRota.length,'Em Rota','var(--ylw)')}
+          ${st(embEntregue.length,'Entregues','var(--grn)')}${st(embBloq.length,'Bloqueados','var(--red)')}
+        </div>
+        ${embBloq.length>0?`<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 12px;margin-bottom:8px">
+          <div style="font-weight:700;color:var(--red);font-size:12px;margin-bottom:4px">🔴 Bloqueados</div>
+          ${embBloq.map(e=>`<div style="font-size:12px;padding:3px 0"><b>${e.numero}</b> — ${e.cliente}<br><span style="color:var(--mut);font-size:11px">${e.observacoes||'Verificar'}</span></div>`).join('')}
+        </div>`:''}
+        ${embRota.length>0?`<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px 12px">
+          <div style="font-weight:700;color:var(--sec);font-size:12px;margin-bottom:4px">🚛 Em Rota</div>
+          ${embRota.map(e=>`<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #DBEAFE"><b>${e.numero}</b> → ${e.destino||'—'}${e.motorista?`<br><span style="font-size:11px;color:var(--mut)">👤 ${e.motorista}</span>`:''}
+          </div>`).join('')}
+        </div>`:'<div style="text-align:center;color:var(--mut);font-size:13px;padding:6px">Nenhum embarque em rota</div>'}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-hdr"><span class="panel-title">📋 Atividades Pendentes</span></div>
+      <div class="panel-body" style="padding:14px">
+        ${atHoje.filter(a=>a.status!=='concluida').slice(0,6).map(a=>`<div style="padding:7px 0;border-bottom:1px solid #F0F4F8;display:flex;gap:8px">
+          <span>${a.status==='em_andamento'?'🔄':'⏳'}</span>
+          <div><div style="font-size:13px;font-weight:700">${a.titulo}</div>
+          <div style="font-size:11px;color:var(--mut)">${a.responsavel||'—'} · ${a.setor||'—'}</div></div>
+        </div>`).join('')||'<div style="text-align:center;color:var(--grn);font-size:13px;padding:6px">✅ Todas atividades concluídas</div>'}
+      </div>
+    </div>
+  </div>
+  </div>
+  <div style="margin-top:16px;background:#F8FAFC;border:1px solid var(--bdr);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--mut);display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    🕐 Gerado às ${new Date().toLocaleTimeString('pt-BR')}
+    <button class="btn btn-ghost btn-sm" onclick="renderPage('relatorios')">🔄 Atualizar</button>
+    <button class="btn btn-ghost btn-sm" onclick="navigate('agentes')">🤖 Ver Agentes IA</button>
+    ${num?wppBtn(apolloMsg,'📲 Enviar Resumo Completo'):'<span>Configure o WhatsApp em Agentes IA para envio direto</span>'}
+  </div>`;
 }
 
 /* ============================================================
