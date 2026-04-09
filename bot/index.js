@@ -51,6 +51,13 @@ app.get('/', (_, res) => res.json({
   uptime: `${Math.floor(process.uptime())}s`,
   connected: !!sock?.user,
 }));
+app.get('/qr', (_, res) => {
+  if (!currentQR) {
+    return res.send('<html><body style="font-family:sans-serif;text-align:center;padding:40px"><h2>Bot ja conectado ou QR nao gerado</h2><p>Recarregue em alguns segundos.</p></body></html>');
+  }
+  const qrJson = JSON.stringify(currentQR);
+  res.send('<!DOCTYPE html><html><head><title>QR ACELERA TIME</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head><body style="display:flex;flex-direction:column;align-items:center;padding:30px;font-family:sans-serif"><h2>Escaneie com o WhatsApp do BOT</h2><div id="qr" style="margin:20px"></div><p style="color:gray">QR expira em ~60s - recarregue se necessario</p><script>new QRCode(document.getElementById("qr"),{text:' + qrJson + ',width:280,height:280});<\/script></body></html>');
+});
 app.listen(PORT, () => console.log(`✅ Health check rodando na porta ${PORT}`));
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -441,6 +448,7 @@ function setupCronJobs() {
 // WhatsApp Connection
 // ─────────────────────────────────────────────────────────────────────────────
 let sock;
+let currentQR = null;
 let alertInterval;
 
 async function connectToWhatsApp() {
@@ -461,6 +469,7 @@ async function connectToWhatsApp() {
 
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
     if (qr) {
+      currentQR = qr;
       console.log('\n📱 ────────────────────────────────────────────');
       console.log('   Escaneie o QR Code com o WhatsApp do número BOT');
       console.log('────────────────────────────────────────────────\n');
@@ -482,6 +491,7 @@ async function connectToWhatsApp() {
     }
 
     if (connection === 'open') {
+      currentQR = null;
       console.log('✅ Bot conectado! Número:', sock.user?.id);
       setupCronJobs();
       // Verifica alertas a cada 5 minutos
