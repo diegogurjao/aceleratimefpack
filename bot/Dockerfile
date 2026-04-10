@@ -1,6 +1,5 @@
 FROM node:20-slim
 
-# Dependências do sistema necessárias para o Baileys
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
@@ -9,20 +8,18 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Força o git a usar HTTPS em vez de SSH (evita erro de repositório git nas deps)
-RUN git config --global url."https://github.com/".insteadOf "git@github.com:" \
-    && git config --global url."https://".insteadOf "ssh://"
+# Força git a usar HTTPS no lugar de SSH/git:// para todas as dependências do npm
+RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/" \
+ && git config --global url."https://github.com/".insteadOf "git@github.com:" \
+ && git config --global url."https://github.com/".insteadOf "git://github.com/"
 
 WORKDIR /app
 
-# Copia manifesto e instala dependências
 COPY package*.json ./
 RUN npm install --production
 
-# Copia o código
 COPY . .
 
-# Pasta de sessão WhatsApp (será um volume no Railway)
 RUN mkdir -p /app/auth_info
 
 EXPOSE 3000
