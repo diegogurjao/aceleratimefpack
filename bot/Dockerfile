@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
+# Força o git a usar HTTPS em vez de SSH (evita erro de repositório git nas deps)
+RUN git config --global url."https://github.com/".insteadOf "git@github.com:" \
+    && git config --global url."https://".insteadOf "ssh://"
+
 WORKDIR /app
 
 # Copia manifesto e instala dependências
