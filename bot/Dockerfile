@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
 # Força git a usar HTTPS no lugar de SSH/git:// para todas as dependências do npm
 RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/" \
  && git config --global url."https://github.com/".insteadOf "git@github.com:" \
- && git config --global url."https://github.com/".insteadOf "git://github.com/"
+ && git config --global url."https://github.com/".insteadOf "git://github.com/" \
+ && git config --global http.sslVerify false
 
 WORKDIR /app
 
